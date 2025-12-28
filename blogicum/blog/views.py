@@ -164,22 +164,16 @@ class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return reverse_lazy('blog:post_detail', kwargs={'post_id': self.object.pk})
 
 
-class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-    model = Post
-    template_name = 'blog/detail.html'
-    context_object_name = 'post'
+@login_required
+def delete_post(request, pk):
+    post = get_object_or_404(Post, pk=pk)
 
-    def test_func(self):
-        post = self.get_object()
-        return self.request.user == post.author
+    if request.user != post.author:
+        return redirect('blog:post_detail', post_id=pk)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['confirm_delete'] = True
-        return context
+    post.delete()
 
-    def get_success_url(self):
-        return reverse_lazy('blog:index')
+    return redirect('blog:index')
 
 
 @login_required

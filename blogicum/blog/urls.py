@@ -48,8 +48,8 @@ urlpatterns = [
     ),
     path(
         "posts/<int:pk>/delete/",
-        views.PostDeleteView.as_view(),
-        name="delete_post",
+        views.delete_post,
+        name="delete_post"
     ),
     # Комментарии
     path(
