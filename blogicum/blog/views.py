@@ -54,8 +54,8 @@ def post_detail(request, post_id):
 
     context = {
         'post': post,
-        'form': form,  # ВАЖНО: передаем форму
-        'comments': comments,  # ВАЖНО: передаем комментарии
+        'form': form,
+        'comments': comments,
     }
     return render(request, 'blog/detail.html', context)
 
@@ -202,33 +202,13 @@ def add_comment(request, post_id):
         # ВАЖНО: Должен быть redirect, не render!
         return redirect('blog:post_detail', post_id=post_id)
 
-    comments = post.comments.all()
-    context = {
-        'post': post,
-        'form': form,
-        'comments': comments,
-    }
-    return render(request, 'blog/detail.html', context)
+    # Если форма не валидна, тоже redirect
+    return redirect('blog:post_detail', post_id=post_id)
 
 
 class CommentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Comment
     form_class = CommentForm
-    template_name = 'blog/comment.html'
-
-    def test_func(self):
-        comment = self.get_object()
-        return self.request.user == comment.author
-
-    def get_success_url(self):
-        return reverse_lazy(
-            'blog:post_detail',
-            kwargs={'post_id': self.object.post.pk}
-        )
-
-
-class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-    model = Comment
     template_name = 'blog/comment.html'
     context_object_name = 'comment'
 
@@ -238,14 +218,35 @@ class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['confirm_delete'] = True
+        context['confirm_delete'] = False
         return context
 
     def get_success_url(self):
         return reverse_lazy(
             'blog:post_detail',
-            kwargs={'post_id': self.object.post.pk}
+            kwargs={'post_id': self.kwargs['post_id']}
         )
+
+
+@login_required
+def delete_comment(request, post_id, pk):
+    """Функция для удаления комментария."""
+    comment = get_object_or_404(Comment, pk=pk)
+
+    # Проверяем, что пользователь является автором комментария
+    if request.user != comment.author:
+        return redirect('blog:post_detail', post_id=post_id)
+
+    if request.method == 'POST':
+        comment.delete()
+        return redirect('blog:post_detail', post_id=post_id)
+
+    # Для GET запроса показываем страницу подтверждения
+    context = {
+        'comment': comment,
+        'confirm_delete': True,
+    }
+    return render(request, 'blog/comment.html', context)
 
 
 class ProfileUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
@@ -290,3 +291,11 @@ def server_error(request):
 
 def permission_denied(request, exception):
     return render(request, 'pages/403csrf.html', status=403)
+
+
+def about(request):
+    return render(request, 'pages/about.html')
+
+
+def rules(request):
+    return render(request, 'pages/rules.html')

@@ -9,7 +9,7 @@ User = get_user_model()
 
 
 class EditProfileForm(UserChangeForm):
-    password = None  # Убираем поле пароля
+    password = None
 
     class Meta:
         model = User
@@ -17,7 +17,6 @@ class EditProfileForm(UserChangeForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Добавляем CSS классы для Bootstrap
         for field in self.fields.values():
             field.widget.attrs['class'] = 'form-control'
 
